@@ -1,0 +1,23 @@
+body {
+  background: #f4f7fb;
+}
+
+.app-header {
+  background: #12355b;
+  color: #fff;
+}
+
+.lesson-card img {
+  height: 140px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.cart-badge {
+  min-width: 1.5rem;
+}
+
+.checkout-success {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+}
