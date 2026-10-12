@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>After School Classes</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <header class="app-header py-3 mb-4">
+      <div class="container d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <h1 class="h3 mb-0"><i class="fa-solid fa-graduation-cap me-2"></i>After School Classes</h1>
+        <button
+          class="btn btn-outline-light"
+          v-on:click="toggleCart"
+          v-bind:disabled="cartCount === 0 && !showCart">
+          <i class="fa-solid fa-cart-shopping me-2"></i>
+          <span v-if="!showCart">Shopping Cart</span>
+          <span v-else>Back to Lessons</span>
+          <span class="badge text-bg-light text-dark ms-2 cart-badge">{{ cartCount }}</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="container pb-5">
+      <p v-if="loadError" class="alert alert-danger">{{ loadError }}</p>
+
+      <section v-if="!showCart">
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <label class="form-label">Search</label>
+            <input
+              class="form-control"
+              type="text"
+              placeholder="Search topic, location, price or spaces"
+              v-model="searchQuery"
+              v-on:input="onSearchInput">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Teacher</label>
+            <select class="form-select" v-model="selectedTeacherId" v-on:change="onTeacherChange">
+              <option value="">All teachers</option>
+              <option v-for="teacher in teachers" v-bind:key="teacher._id" v-bind:value="teacher._id">
+                {{ teacher.firstName }} {{ teacher.lastName }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Sort by</label>
+            <select class="form-select" v-model="sortAttribute">
+              <option value="topic">Subject</option>
+              <option value="location">Location</option>
+              <option value="price">Price</option>
+              <option value="space">Spaces</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Order</label>
+            <select class="form-select" v-model="sortOrder">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-6 col-lg-4" v-for="lesson in sortedLessons" v-bind:key="lesson._id">
+            <article class="card h-100 lesson-card shadow-sm">
+              <img v-bind:src="imageUrl(lesson.image)" v-bind:alt="lesson.topic" class="card-img-top p-3">
+              <div class="card-body">
+                <h2 class="h5">
+                  <i class="fa-solid fa-book-open me-2 text-primary"></i>{{ lesson.topic }}
+                </h2>
+                <p class="mb-1"><i class="fa-solid fa-location-dot me-2"></i>{{ lesson.location }}</p>
+                <p class="mb-1"><i class="fa-solid fa-sterling-sign me-2"></i>{{ lesson.price }}</p>
+                <p class="mb-1"><i class="fa-solid fa-chair me-2"></i>Spaces: {{ lesson.space }}</p>
+                <p class="mb-1"><i class="fa-solid fa-chalkboard-user me-2"></i>{{ teacherName(lesson.teacherId) }}</p>
+                <p class="mb-3 text-muted">Enrolment: {{ lesson.enrolment || 0 }}</p>
+                <button
+                  class="btn btn-primary w-100"
+                  v-on:click="addToCart(lesson)"
+                  v-bind:disabled="lesson.space <= 0">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+          </div>
+        </div>
+        <p v-if="sortedLessons.length === 0" class="text-muted mt-4">No lessons match your filters.</p>
+      </section>
+
+      <section v-else>
+        <h2 class="h4 mb-3">Shopping Cart</h2>
+        <div class="row g-4">
+          <div class="col-lg-7">
+            <div class="card shadow-sm" v-for="item in cart" v-bind:key="item.lesson._id">
+              <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                  <h3 class="h6 mb-1">{{ item.lesson.topic }} — {{ item.lesson.location }}</h3>
+                  <p class="mb-0">Quantity: {{ item.quantity }} · £{{ item.lesson.price }} each</p>
+                </div>
+                <button class="btn btn-outline-danger" v-on:click="removeFromCart(item)">
+                  Remove
+                </button>
+              </div>
+            </div>
+            <p v-if="cart.length === 0" class="text-muted">Your cart is empty.</p>
+          </div>
+          <div class="col-lg-5">
+            <div class="card shadow-sm">
+              <div class="card-body">
+                <h3 class="h5">Checkout</h3>
+                <div class="mb-3">
+                  <label class="form-label">Name</label>
+                  <input class="form-control" type="text" v-model="checkoutName" placeholder="Letters only">
+                  <div class="form-text text-danger" v-if="checkoutName && !nameValid">Name must contain letters only.</div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Phone</label>
+                  <input class="form-control" type="text" v-model="checkoutPhone" placeholder="Numbers only">
+                  <div class="form-text text-danger" v-if="checkoutPhone && !phoneValid">Phone must contain numbers only.</div>
+                </div>
+                <button
+                  class="btn btn-success w-100"
+                  v-on:click="checkout"
+                  v-bind:disabled="!checkoutEnabled">
+                  Checkout
+                </button>
+                <p class="mt-3 p-2 rounded checkout-success" v-if="checkoutMessage">{{ checkoutMessage }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
