@@ -5,15 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>After School Classes</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <!-- Bootstrap CSS (allowed external CSS library) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome for lesson icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+  <!-- Custom styles -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <!-- Vue mounts the entire app inside this div -->
   <div id="app">
     <header class="app-header py-3 mb-4">
       <div class="container d-flex flex-wrap align-items-center justify-content-between gap-3">
         <h1 class="h3 mb-0"><i class="fa-solid fa-graduation-cap me-2"></i>After School Classes</h1>
+        <!-- Shopping cart toggle button.
+             v-on:click calls toggleCart() in app.js.
+             v-bind:disabled disables the button when the cart is empty
+             and we are on the lessons page (so an empty cart can't be opened). -->
         <button
           class="btn btn-outline-light"
           v-on:click="toggleCart"
@@ -27,10 +35,14 @@
     </header>
 
     <main class="container pb-5">
+      <!-- Error message shown if the API fails to load lessons -->
       <p v-if="loadError" class="alert alert-danger">{{ loadError }}</p>
 
+      <!-- ===== LESSONS PAGE ===== -->
+      <!-- v-if="!showCart" shows the lessons list when the cart is not open -->
       <section v-if="!showCart">
         <div class="row g-3 mb-4">
+          <!-- Search box (CHALLENGE: search runs on the back-end) -->
           <div class="col-md-4">
             <label class="form-label">Search</label>
             <input
@@ -40,6 +52,7 @@
               v-model="searchQuery"
               v-on:input="onSearchInput">
           </div>
+          <!-- Teacher dropdown (CHALLENGE: filter lessons by teacher) -->
           <div class="col-md-3">
             <label class="form-label">Teacher</label>
             <select class="form-select" v-model="selectedTeacherId" v-on:change="onTeacherChange">
@@ -49,6 +62,7 @@
               </option>
             </select>
           </div>
+          <!-- Sort attribute selector: subject, location, price, or spaces -->
           <div class="col-md-3">
             <label class="form-label">Sort by</label>
             <select class="form-select" v-model="sortAttribute">
@@ -58,6 +72,7 @@
               <option value="space">Spaces</option>
             </select>
           </div>
+          <!-- Sort direction: ascending or descending -->
           <div class="col-md-2">
             <label class="form-label">Order</label>
             <select class="form-select" v-model="sortOrder">
@@ -67,19 +82,30 @@
           </div>
         </div>
 
+        <!-- Lesson cards grid.
+             v-for iterates over the sortedLessons computed property and renders
+             one card per lesson. v-bind:key gives each item a unique key. -->
         <div class="row g-4">
           <div class="col-md-6 col-lg-4" v-for="lesson in sortedLessons" v-bind:key="lesson._id">
             <article class="card h-100 lesson-card shadow-sm">
+              <!-- Lesson image served by the Express static file middleware -->
               <img v-bind:src="imageUrl(lesson.image)" v-bind:alt="lesson.topic" class="card-img-top p-3">
               <div class="card-body">
                 <h2 class="h5">
                   <i class="fa-solid fa-book-open me-2 text-primary"></i>{{ lesson.topic }}
                 </h2>
+                <!-- Each lesson shows: subject, location, price, spaces -->
                 <p class="mb-1"><i class="fa-solid fa-location-dot me-2"></i>{{ lesson.location }}</p>
                 <p class="mb-1"><i class="fa-solid fa-sterling-sign me-2"></i>{{ lesson.price }}</p>
                 <p class="mb-1"><i class="fa-solid fa-chair me-2"></i>Spaces: {{ lesson.space }}</p>
+                <!-- Teacher name (CHALLENGE: teachers stored in DB) -->
                 <p class="mb-1"><i class="fa-solid fa-chalkboard-user me-2"></i>{{ teacherName(lesson.teacherId) }}</p>
+                <!-- Enrolment count (CHALLENGE: spaces already purchased) -->
                 <p class="mb-3 text-muted">Enrolment: {{ lesson.enrolment || 0 }}</p>
+                <!-- Add to Cart button.
+                     v-on:click calls addToCart(lesson).
+                     v-bind:disabled disables the button when space is 0 or less,
+                     but the button stays visible as required by the brief. -->
                 <button
                   class="btn btn-primary w-100"
                   v-on:click="addToCart(lesson)"
@@ -90,12 +116,16 @@
             </article>
           </div>
         </div>
+        <!-- Message shown when no lessons match the current filters -->
         <p v-if="sortedLessons.length === 0" class="text-muted mt-4">No lessons match your filters.</p>
       </section>
 
+      <!-- ===== SHOPPING CART PAGE ===== -->
+      <!-- v-else shows the cart when showCart is true -->
       <section v-else>
         <h2 class="h4 mb-3">Shopping Cart</h2>
         <div class="row g-4">
+          <!-- Cart items list -->
           <div class="col-lg-7">
             <div class="card shadow-sm" v-for="item in cart" v-bind:key="item.lesson._id">
               <div class="card-body d-flex justify-content-between align-items-center">
@@ -103,6 +133,7 @@
                   <h3 class="h6 mb-1">{{ item.lesson.topic }} — {{ item.lesson.location }}</h3>
                   <p class="mb-0">Quantity: {{ item.quantity }} · £{{ item.lesson.price }} each</p>
                 </div>
+                <!-- Remove button: removes one space and gives it back to the lesson -->
                 <button class="btn btn-outline-danger" v-on:click="removeFromCart(item)">
                   Remove
                 </button>
@@ -110,26 +141,53 @@
             </div>
             <p v-if="cart.length === 0" class="text-muted">Your cart is empty.</p>
           </div>
+
+          <!-- Checkout form (checkout is part of the cart page, not the lessons page) -->
           <div class="col-lg-5">
             <div class="card shadow-sm">
               <div class="card-body">
                 <h3 class="h5">Checkout</h3>
+                <!-- Name field - validated with regex: letters only AND must be a full name (first + last).
+                     nameValid computed property returns true only when there are at least 2 words. -->
                 <div class="mb-3">
                   <label class="form-label">Name</label>
-                  <input class="form-control" type="text" v-model="checkoutName" placeholder="Letters only">
-                  <div class="form-text text-danger" v-if="checkoutName && !nameValid">Name must contain letters only.</div>
+                  <input class="form-control" type="text" v-model="checkoutName" placeholder="Full name (e.g. John Smith)">
+                  <div class="form-text text-danger" v-if="checkoutName && !nameValid">Please enter your full name (first and last name, letters only).</div>
                 </div>
+                <!-- Phone field - country code dropdown + number input.
+                     phoneValid computed property checks digits only and minimum 7 digits. -->
                 <div class="mb-3">
                   <label class="form-label">Phone</label>
-                  <input class="form-control" type="text" v-model="checkoutPhone" placeholder="Numbers only">
-                  <div class="form-text text-danger" v-if="checkoutPhone && !phoneValid">Phone must contain numbers only.</div>
+                  <div class="input-group">
+                    <select class="form-select" style="max-width: 120px" v-model="countryCode">
+                      <option value="+230">+230 Mauritius</option>
+                      <option value="+44">+44 UK</option>
+                      <option value="+1">+1 USA/Canada</option>
+                      <option value="+91">+91 India</option>
+                      <option value="+254">+254 Kenya</option>
+                      <option value="+234">+234 Nigeria</option>
+                      <option value="+61">+61 Australia</option>
+                      <option value="+27">+27 South Africa</option>
+                    </select>
+                    <input class="form-control" type="text" v-model="checkoutPhone" placeholder="Phone number (digits only)">
+                  </div>
+                  <div class="form-text text-danger" v-if="checkoutPhone && !phoneValid">Please enter a valid phone number (digits only, at least 7 digits).</div>
                 </div>
+                <!-- Cart total: automatically updates as items are added or removed.
+                     cartTotal is a computed property summing quantity x price for each item. -->
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                  <span class="fw-bold">Total:</span>
+                  <span class="fs-5">£{{ cartTotal }}</span>
+                </div>
+                <!-- Checkout button - always visible, enabled only when name and phone are valid
+                     (checkoutEnabled computed property). -->
                 <button
                   class="btn btn-success w-100"
                   v-on:click="checkout"
                   v-bind:disabled="!checkoutEnabled">
                   Checkout
                 </button>
+                <!-- Success / error message shown after checkout -->
                 <p class="mt-3 p-2 rounded checkout-success" v-if="checkoutMessage">{{ checkoutMessage }}</p>
               </div>
             </div>
@@ -139,8 +197,11 @@
     </main>
   </div>
 
+  <!-- Vue 3 framework loaded from CDN -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- API base URL configuration (change to your Render URL before deploying) -->
   <script src="js/config.js"></script>
+  <!-- Main Vue application -->
   <script src="js/app.js"></script>
 </body>
 </html>

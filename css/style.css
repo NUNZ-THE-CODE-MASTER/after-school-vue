@@ -1,22 +1,31 @@
+/* Custom styles for the After School Classes app.
+   Layout and most styling come from Bootstrap (CDN in index.html).
+   These rules only add small visual tweaks. */
+
+/* Page background colour */
 body {
   background: #f4f7fb;
 }
 
+/* Dark header bar */
 .app-header {
   background: #12355b;
   color: #fff;
 }
 
+/* Lesson card image: fixed height, contained, white background */
 .lesson-card img {
   height: 140px;
   object-fit: contain;
   background: #fff;
 }
 
+/* Cart item count badge: minimum width so single digits don't look cramped */
 .cart-badge {
   min-width: 1.5rem;
 }
 
+/* Green confirmation box shown after a successful checkout */
 .checkout-success {
   background: #dcfce7;
   border: 1px solid #86efac;
