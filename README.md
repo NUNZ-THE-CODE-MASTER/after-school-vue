@@ -4,8 +4,8 @@ CST3144 front-end: Vue 3 (CDN), Bootstrap, Font Awesome, and `fetch` with Promis
 
 ## Links (fill these in before submission)
 
-- GitHub repository: `https://github.com/YOUR_USERNAME/after-school-vue`
-- GitHub Pages: `https://YOUR_USERNAME.github.io/after-school-vue/`
+- GitHub repository: `https://github.com/NUNZ-THE-CODE-MASTER/after-school-vue`
+- GitHub Pages: `https://NUNZ-THE-CODE-MASTER.github.io/after-school-vue/`
 
 ## Local setup
 
@@ -19,7 +19,7 @@ npx --yes serve -l 8080
 3. For GitHub Pages, set `API_BASE_URL` in `js/config.js` to your Render URL:
 
 ```
-const API_BASE_URL = "https://YOUR_STUDENT_NUMBER-after-school.onrender.com";
+const API_BASE_URL = "https://M00956871-after-school.onrender.com";
 ```
 
 ## GitHub Pages
